@@ -71,6 +71,8 @@ ScreenScribe allows you to choose between the following Gemini models to optimiz
 
 Since this app is not notarized with Apple, macOS will show a security warning. Here's how to open it:
 
+> Note: "Not notarized" is separate from "unsigned". Screen Recording permission relies on the app having a stable code signature, even if Gatekeeper still requires the right-click "Open" flow.
+
 **Option 1: Right-click to Open (Recommended)**
 1. Open Finder and go to Applications
 2. Right-click (or Control-click) on ScreenScribe

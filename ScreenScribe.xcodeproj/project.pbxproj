@@ -444,6 +444,7 @@
 		};
 		87E192CF2BAADE1400A87A4E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B9583C7B2DBD8C8300F43550 /* Build.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -469,7 +470,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = "$(inherited)";
-				PRODUCT_BUNDLE_IDENTIFIER = "app.samuelz12.screenscribe-dev";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -478,6 +479,7 @@
 		};
 		87E192D02BAADE1400A87A4E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B9583C7B2DBD8C8300F43550 /* Build.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -503,7 +505,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = "$(inherited)";
-				PRODUCT_BUNDLE_IDENTIFIER = "app.samuelz12.screenscribe-dev";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

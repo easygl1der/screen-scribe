@@ -18,7 +18,7 @@ ScreenScribe is a macOS menu bar application for screen capture and AI-powered c
 - **Main scheme:** `ScreenScribe` (ensure this is selected in Xcode)
 - **Target:** macOS 14.0+
 - **Bundle ID:** `app.samuelz12.screenscribe-dev` (defined in Build.xcconfig)
-- **Current version:** 1.2.2 (MARKETING_VERSION in Build.xcconfig)
+- **Current version:** 2.0.9 (MARKETING_VERSION in Build.xcconfig)
 
 ## Architecture
 
