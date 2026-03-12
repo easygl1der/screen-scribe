@@ -145,7 +145,44 @@ private enum ScreenCaptureServiceError: LocalizedError {
 }
 
 @MainActor
+protocol RegionSelectionOverlayWindow: AnyObject {
+    func orderOut(_ sender: Any?)
+    func prepareForReuse()
+    func setFrame(_ frame: CGRect, display: Bool)
+}
+
+@MainActor
+struct RegionSelectionOverlayTeardown {
+    init() {}
+
+    func dismiss(_ window: RegionSelectionOverlayWindow?) {
+        window?.orderOut(nil)
+        window?.prepareForReuse()
+    }
+}
+
+@MainActor
+struct RegionSelectionOverlayPresenter {
+    init() {}
+
+    func prepareWindow<Window: RegionSelectionOverlayWindow>(
+        existingWindow: Window?,
+        frame: CGRect,
+        makeWindow: (CGRect) -> Window
+    ) -> Window {
+        if let existingWindow {
+            existingWindow.setFrame(frame, display: false)
+            return existingWindow
+        }
+
+        return makeWindow(frame)
+    }
+}
+
+@MainActor
 private final class ScreenRegionSelector {
+    private let overlayTeardown = RegionSelectionOverlayTeardown()
+    private let overlayPresenter = RegionSelectionOverlayPresenter()
     private var overlayWindow: ScreenRegionSelectionWindow?
     private var continuation: CheckedContinuation<CGRect?, Never>?
 
@@ -168,7 +205,13 @@ private final class ScreenRegionSelector {
             return
         }
 
-        let window = ScreenRegionSelectionWindow(frame: desktopFrame)
+        let window = overlayPresenter.prepareWindow(
+            existingWindow: overlayWindow,
+            frame: desktopFrame,
+            makeWindow: ScreenRegionSelectionWindow.init(frame:)
+        )
+        overlayWindow = window
+
         let selectionView = ScreenRegionSelectionView(
             frame: CGRect(origin: .zero, size: desktopFrame.size),
             onComplete: { [weak self] rect in
@@ -180,7 +223,6 @@ private final class ScreenRegionSelector {
         )
 
         window.contentView = selectionView
-        overlayWindow = window
 
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
@@ -188,16 +230,18 @@ private final class ScreenRegionSelector {
     }
 
     private func finish(with rect: CGRect?) {
-        overlayWindow?.orderOut(nil)
-        overlayWindow?.close()
-        overlayWindow = nil
+        guard let continuation else {
+            return
+        }
 
-        continuation?.resume(returning: rect)
-        continuation = nil
+        self.continuation = nil
+
+        overlayTeardown.dismiss(overlayWindow)
+        continuation.resume(returning: rect)
     }
 }
 
-private final class ScreenRegionSelectionWindow: NSWindow {
+private final class ScreenRegionSelectionWindow: NSWindow, RegionSelectionOverlayWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
@@ -211,6 +255,7 @@ private final class ScreenRegionSelectionWindow: NSWindow {
 
         isOpaque = false
         backgroundColor = .clear
+        animationBehavior = .none
         hasShadow = false
         level = .screenSaver
         collectionBehavior = [
@@ -219,6 +264,10 @@ private final class ScreenRegionSelectionWindow: NSWindow {
             .stationary,
             .ignoresCycle
         ]
+    }
+
+    func prepareForReuse() {
+        makeFirstResponder(nil)
     }
 }
 
