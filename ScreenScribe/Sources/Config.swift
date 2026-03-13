@@ -36,6 +36,8 @@ struct GeminiModel: Identifiable {
 
 /// Central configuration access point for the application
 enum Config {
+    static let defaultGeminiModelID = "gemini-3-flash-preview"
+
     /// The Gemini API key loaded from Keychain or Secrets.plist
     @MainActor
     static var geminiAPIKey: String {
@@ -48,9 +50,29 @@ enum Config {
     /// Available Gemini models to choose from
     static let availableGeminiModels: [GeminiModel] = [
         .init(id: "gemini-3-flash-preview", label: "Gemini 3 Flash", note: "Best balance"),
-        .init(id: "gemini-3-pro-preview", label: "Gemini 3 Pro", note: "Most capable"),
-        .init(id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash-Lite", note: "Fastest"),
+        .init(id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", note: "Most capable"),
+        .init(id: "gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash-Lite", note: "Fastest"),
     ]
+
+    static func migratedGeminiModelID(_ modelID: String) -> String {
+        switch modelID {
+        case "gemini-3-pro-preview":
+            return "gemini-3.1-pro-preview"
+        case "gemini-2.5-flash-lite":
+            return "gemini-3.1-flash-lite-preview"
+        default:
+            return modelID
+        }
+    }
+
+    static func resolvedGeminiModelID(from storedModel: String?) -> String {
+        let candidate = migratedGeminiModelID(storedModel ?? defaultGeminiModelID)
+        if availableGeminiModels.contains(where: { $0.id == candidate }) {
+            return candidate
+        }
+
+        return defaultGeminiModelID
+    }
     
     /// Get the Gemini API endpoint for the specified model
     static func geminiEndpoint(for model: String) -> String {

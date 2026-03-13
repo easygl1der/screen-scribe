@@ -47,12 +47,11 @@ final class SettingsManager: ObservableObject {
             UserDefaults.standard.removeObject(forKey: "latexShortcut")
         }
 
-        let defaultModel = "gemini-3-flash-preview"
-        let storedModel = UserDefaults.standard.string(forKey: "geminiModel") ?? defaultModel
-        if Config.availableGeminiModels.contains(where: { $0.id == storedModel }) {
-            selectedModel = storedModel
-        } else {
-            selectedModel = defaultModel
+        let storedModel = UserDefaults.standard.string(forKey: "geminiModel")
+        let resolvedModel = Config.resolvedGeminiModelID(from: storedModel)
+        selectedModel = resolvedModel
+        if storedModel != resolvedModel {
+            UserDefaults.standard.set(resolvedModel, forKey: "geminiModel")
         }
 
         if textShortcut == nil {

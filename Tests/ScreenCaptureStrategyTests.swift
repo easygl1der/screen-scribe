@@ -34,16 +34,16 @@ struct ScreenCaptureStrategyTests {
             ScreenCaptureStrategy.preferred(
                 for: OperatingSystemVersion(majorVersion: 15, minorVersion: 2, patchVersion: 0)
             ),
-            .nativeRegionSelection,
-            "macOS 15.2 should prefer the native ScreenCaptureKit region backend"
+            .legacyScreencaptureCLI,
+            "macOS 15.2 should keep using Apple's interactive screencapture backend"
         )
 
         expectEqual(
             ScreenCaptureStrategy.preferred(
                 for: OperatingSystemVersion(majorVersion: 26, minorVersion: 2, patchVersion: 0)
             ),
-            .nativeRegionSelection,
-            "Tahoe-era macOS releases should stay on the native ScreenCaptureKit backend"
+            .legacyScreencaptureCLI,
+            "Modern macOS releases should keep using Apple's interactive screencapture backend"
         )
 
         print("ScreenCaptureStrategyTests passed")

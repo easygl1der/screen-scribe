@@ -15,18 +15,17 @@ enum ScreenCaptureBackend: String, Equatable, CustomStringConvertible {
     }
 }
 
+struct ScreenCaptureCLIArguments {
+    static func selectionArguments(outputURL: URL) -> [String] {
+        ["-i", "-s", "-x", "-t", "png", outputURL.path]
+    }
+}
+
 struct ScreenCaptureStrategy {
     static func preferred(
         for version: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
     ) -> ScreenCaptureBackend {
-        if version.majorVersion > 15 {
-            return .nativeRegionSelection
-        }
-
-        if version.majorVersion == 15 && version.minorVersion >= 2 {
-            return .nativeRegionSelection
-        }
-
+        _ = version
         return .legacyScreencaptureCLI
     }
 }
@@ -37,17 +36,7 @@ final class ScreenCaptureService {
     private let selector = ScreenRegionSelector()
 
     func captureSelectionImage() async -> NSImage? {
-        switch ScreenCaptureStrategy.preferred() {
-        case .nativeRegionSelection:
-            if #available(macOS 15.2, *) {
-                return await captureWithNativeRegionSelection()
-            }
-
-            Logger.log(.error, "Native region capture was selected on an unsupported macOS version")
-            return await captureWithLegacyCLI()
-        case .legacyScreencaptureCLI:
-            return await captureWithLegacyCLI()
-        }
+        return await captureWithLegacyCLI()
     }
 
     @available(macOS 15.2, *)
@@ -72,21 +61,31 @@ final class ScreenCaptureService {
     }
 
     private func captureWithLegacyCLI() async -> NSImage? {
-        let initialChangeCount = NSPasteboard.general.changeCount
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("screenscribe-\(UUID().uuidString)")
+            .appendingPathExtension("png")
 
         return await withCheckedContinuation { (continuation: CheckedContinuation<NSImage?, Never>) in
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            task.arguments = ["-i", "-c", "-x"]
-            task.terminationHandler = { _ in
+            task.arguments = ScreenCaptureCLIArguments.selectionArguments(outputURL: outputURL)
+            task.terminationHandler = { process in
                 DispatchQueue.main.async {
-                    let pasteboard = NSPasteboard.general
-                    guard pasteboard.changeCount != initialChangeCount else {
+                    defer {
+                        try? FileManager.default.removeItem(at: outputURL)
+                    }
+
+                    guard process.terminationStatus == 0 else {
                         continuation.resume(returning: nil)
                         return
                     }
 
-                    continuation.resume(returning: Self.pasteboardImage(from: pasteboard))
+                    guard let data = try? Data(contentsOf: outputURL) else {
+                        continuation.resume(returning: nil)
+                        return
+                    }
+
+                    continuation.resume(returning: NSImage(data: data))
                 }
             }
 
@@ -94,6 +93,7 @@ final class ScreenCaptureService {
                 try task.run()
             } catch {
                 Logger.log(.error, "Legacy screencapture launch failed: \(error.localizedDescription)")
+                try? FileManager.default.removeItem(at: outputURL)
                 continuation.resume(returning: nil)
             }
         }
@@ -118,19 +118,6 @@ final class ScreenCaptureService {
         }
     }
 
-    private static func pasteboardImage(from pasteboard: NSPasteboard) -> NSImage? {
-        if let data = pasteboard.data(forType: .fileURL),
-           let string = String(data: data, encoding: .utf8),
-           let url = URL(string: string) {
-            return NSImage(contentsOf: url)
-        }
-
-        if let data = pasteboard.data(forType: .tiff) ?? pasteboard.data(forType: .png) {
-            return NSImage(data: data)
-        }
-
-        return (pasteboard.readObjects(forClasses: [NSImage.self]) as? [NSImage])?.first
-    }
 }
 
 private enum ScreenCaptureServiceError: LocalizedError {

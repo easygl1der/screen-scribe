@@ -64,7 +64,9 @@ struct GeminiService {
         }
 
         // Get the selected model from UserDefaults
-        let model = UserDefaults.standard.string(forKey: "geminiModel") ?? "gemini-2.0-flash"
+        let model = Config.resolvedGeminiModelID(
+            from: UserDefaults.standard.string(forKey: "geminiModel")
+        )
 
         let payload: [String: Any] = [
             "contents": [[
