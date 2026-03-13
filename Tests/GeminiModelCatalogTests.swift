@@ -34,6 +34,34 @@ struct GeminiModelCatalogTests {
             Config.migratedGeminiModelID("gemini-3-flash-preview") == "gemini-3-flash-preview",
             "Current supported selections should remain unchanged"
         )
+        expect(
+            Config.persistedGeminiModelMigration(from: "gemini-3-pro-preview") == "gemini-3.1-pro-preview",
+            "Only the deprecated Gemini 3 Pro Preview setting should be rewritten in storage"
+        )
+        expect(
+            Config.persistedGeminiModelMigration(from: "gemini-2.5-flash-lite") == "gemini-3.1-flash-lite-preview",
+            "Only the deprecated Gemini 2.5 Flash-Lite setting should be rewritten in storage"
+        )
+        expect(
+            Config.persistedGeminiModelMigration(from: "gemini-3-flash-preview") == nil,
+            "Supported Gemini selections should not be rewritten in storage"
+        )
+        expect(
+            Config.persistedGeminiModelMigration(from: "gemini-custom-experimental") == nil,
+            "Unknown custom Gemini selections should not be overwritten during migration"
+        )
+        expect(
+            Config.requestGeminiModelID(from: "gemini-3-pro-preview") == "gemini-3.1-pro-preview",
+            "Deprecated Gemini 3 Pro Preview requests should be upgraded automatically"
+        )
+        expect(
+            Config.requestGeminiModelID(from: "gemini-custom-experimental") == "gemini-custom-experimental",
+            "Custom Gemini selections should still be used for requests"
+        )
+        expect(
+            Config.requestGeminiModelID(from: nil) == "gemini-3-flash-preview",
+            "Missing Gemini selections should still use the default request model"
+        )
 
         print("GeminiModelCatalogTests passed")
     }

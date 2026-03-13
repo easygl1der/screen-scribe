@@ -65,8 +65,37 @@ enum Config {
         }
     }
 
+    static func persistedGeminiModelMigration(from storedModel: String?) -> String? {
+        guard let storedModel, !storedModel.isEmpty else {
+            return nil
+        }
+
+        let candidate = migratedGeminiModelID(storedModel)
+        guard candidate != storedModel else {
+            return nil
+        }
+
+        guard availableGeminiModels.contains(where: { $0.id == candidate }) else {
+            return nil
+        }
+
+        return candidate
+    }
+
+    static func requestGeminiModelID(from storedModel: String?) -> String {
+        if let migratedModel = persistedGeminiModelMigration(from: storedModel) {
+            return migratedModel
+        }
+
+        guard let storedModel, !storedModel.isEmpty else {
+            return defaultGeminiModelID
+        }
+
+        return storedModel
+    }
+
     static func resolvedGeminiModelID(from storedModel: String?) -> String {
-        let candidate = migratedGeminiModelID(storedModel ?? defaultGeminiModelID)
+        let candidate = requestGeminiModelID(from: storedModel)
         if availableGeminiModels.contains(where: { $0.id == candidate }) {
             return candidate
         }

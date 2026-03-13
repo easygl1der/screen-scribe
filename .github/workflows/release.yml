@@ -25,14 +25,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Select Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: 'latest-stable'
+      - name: Select latest stable Xcode
+        run: scripts/select-latest-stable-xcode.sh
 
       - name: Extract version from tag
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -55,6 +53,9 @@ jobs:
           </dict>
           </plist>
           EOF
+
+      - name: Run standalone regression checks
+        run: scripts/run-standalone-tests.sh
 
       - name: Validate release signing configuration
         env:
@@ -167,40 +168,45 @@ jobs:
         run: |
           shasum -a 256 "${{ env.DMG_NAME }}" > "${{ env.DMG_NAME }}.sha256"
 
-      - name: Create tag for manual dispatch
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ env.VERSION }}" -m "Release v${{ env.VERSION }}"
-          git push origin "v${{ env.VERSION }}"
-
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ env.DMG_NAME }}
-            ${{ env.DMG_NAME }}.sha256
-          tag_name: v${{ env.VERSION }}
-          name: ScreenScribe v${{ env.VERSION }}
-          draft: false
-          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
-          generate_release_notes: true
-          body: |
-            ## Installation
-
-            1. Download `${{ env.DMG_NAME }}`
-            2. Open the DMG file
-            3. Drag ScreenScribe to your Applications folder
-            4. See [README](https://github.com/${{ github.repository }}#installation--usage) for first-run instructions
-
-            **Note:** This app is not notarized. macOS Gatekeeper will show a warning on first launch. Right-click the app and select "Open" to bypass the warning.
-
-            ---
-
-            **SHA-256 Checksum:** See `${{ env.DMG_NAME }}.sha256`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE_INPUT: ${{ github.event.inputs.prerelease }}
+        run: |
+          release_notes=$(cat <<EOF
+          ## Installation
+
+          1. Download \`${DMG_NAME}\`
+          2. Open the DMG file
+          3. Drag ScreenScribe to your Applications folder
+          4. See [README](https://github.com/${GITHUB_REPOSITORY}#installation--usage) for first-run instructions
+
+          **Note:** This app is not notarized. macOS Gatekeeper will show a warning on first launch. Right-click the app and select "Open" to bypass the warning.
+
+          ---
+
+          **SHA-256 Checksum:** See \`${DMG_NAME}.sha256\`
+          EOF
+          )
+
+          prerelease_args=()
+          if [[ "$PRERELEASE_INPUT" == "true" ]]; then
+            prerelease_args=(--prerelease)
+          fi
+
+          target_args=()
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            target_args=(--target "$GITHUB_SHA")
+          fi
+
+          gh release create "v${VERSION}" \
+            "${DMG_NAME}" \
+            "${DMG_NAME}.sha256" \
+            --title "ScreenScribe v${VERSION}" \
+            --notes "${release_notes}" \
+            --generate-notes \
+            "${prerelease_args[@]}" \
+            "${target_args[@]}"
 
       - name: Cleanup signing keychain
         if: always()

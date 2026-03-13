@@ -15,7 +15,7 @@ private func expectEqual(
 struct ScreenCaptureStrategyTests {
     static func main() {
         expectEqual(
-            ScreenCaptureStrategy.preferred(
+            ScreenCaptureService.activeBackend(
                 for: OperatingSystemVersion(majorVersion: 14, minorVersion: 6, patchVersion: 0)
             ),
             .legacyScreencaptureCLI,
@@ -23,7 +23,7 @@ struct ScreenCaptureStrategyTests {
         )
 
         expectEqual(
-            ScreenCaptureStrategy.preferred(
+            ScreenCaptureService.activeBackend(
                 for: OperatingSystemVersion(majorVersion: 15, minorVersion: 1, patchVersion: 0)
             ),
             .legacyScreencaptureCLI,
@@ -31,7 +31,7 @@ struct ScreenCaptureStrategyTests {
         )
 
         expectEqual(
-            ScreenCaptureStrategy.preferred(
+            ScreenCaptureService.activeBackend(
                 for: OperatingSystemVersion(majorVersion: 15, minorVersion: 2, patchVersion: 0)
             ),
             .legacyScreencaptureCLI,
@@ -39,7 +39,7 @@ struct ScreenCaptureStrategyTests {
         )
 
         expectEqual(
-            ScreenCaptureStrategy.preferred(
+            ScreenCaptureService.activeBackend(
                 for: OperatingSystemVersion(majorVersion: 26, minorVersion: 2, patchVersion: 0)
             ),
             .legacyScreencaptureCLI,

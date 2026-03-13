@@ -50,8 +50,8 @@ final class SettingsManager: ObservableObject {
         let storedModel = UserDefaults.standard.string(forKey: "geminiModel")
         let resolvedModel = Config.resolvedGeminiModelID(from: storedModel)
         selectedModel = resolvedModel
-        if storedModel != resolvedModel {
-            UserDefaults.standard.set(resolvedModel, forKey: "geminiModel")
+        if let migratedModel = Config.persistedGeminiModelMigration(from: storedModel) {
+            UserDefaults.standard.set(migratedModel, forKey: "geminiModel")
         }
 
         if textShortcut == nil {

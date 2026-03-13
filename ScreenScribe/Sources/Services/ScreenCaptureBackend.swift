@@ -35,8 +35,23 @@ struct ScreenCaptureStrategy {
 final class ScreenCaptureService {
     private let selector = ScreenRegionSelector()
 
+    static func activeBackend(
+        for version: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+    ) -> ScreenCaptureBackend {
+        ScreenCaptureStrategy.preferred(for: version)
+    }
+
     func captureSelectionImage() async -> NSImage? {
-        return await captureWithLegacyCLI()
+        switch Self.activeBackend() {
+        case .legacyScreencaptureCLI:
+            return await captureWithLegacyCLI()
+        case .nativeRegionSelection:
+            if #available(macOS 15.2, *) {
+                return await captureWithNativeRegionSelection()
+            }
+
+            return await captureWithLegacyCLI()
+        }
     }
 
     @available(macOS 15.2, *)

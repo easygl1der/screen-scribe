@@ -64,7 +64,7 @@ struct GeminiService {
         }
 
         // Get the selected model from UserDefaults
-        let model = Config.resolvedGeminiModelID(
+        let model = Config.requestGeminiModelID(
             from: UserDefaults.standard.string(forKey: "geminiModel")
         )
 
