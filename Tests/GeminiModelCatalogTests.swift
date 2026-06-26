@@ -12,15 +12,20 @@ struct GeminiModelCatalogTests {
     static func main() {
         let modelIDs = Config.availableGeminiModels.map(\.id)
 
-        expect(modelIDs.contains("gemini-3-flash-preview"), "Gemini 3 Flash should remain available")
+        expect(modelIDs.contains("gemini-3.5-flash"), "Gemini 3.5 Flash should be available")
         expect(modelIDs.contains("gemini-3.1-pro-preview"), "Gemini 3.1 Pro Preview should be available")
         expect(modelIDs.contains("gemini-3.1-flash-lite-preview"), "Gemini 3.1 Flash-Lite Preview should be available")
+        expect(!modelIDs.contains("gemini-3-flash-preview"), "Gemini 3 Flash Preview should be removed from the catalog")
         expect(!modelIDs.contains("gemini-3-pro-preview"), "Gemini 3 Pro Preview should be removed from the catalog")
         expect(!modelIDs.contains("gemini-2.5-flash-lite"), "Gemini 2.5 Flash-Lite should be removed from the catalog")
 
         expect(
-            Config.defaultGeminiModelID == "gemini-3-flash-preview",
-            "The default Gemini model should remain Gemini 3 Flash"
+            Config.defaultGeminiModelID == "gemini-3.5-flash",
+            "The default Gemini model should be Gemini 3.5 Flash"
+        )
+        expect(
+            Config.migratedGeminiModelID("gemini-3-flash-preview") == "gemini-3.5-flash",
+            "Stored Gemini 3 Flash Preview selections should migrate to Gemini 3.5 Flash"
         )
         expect(
             Config.migratedGeminiModelID("gemini-3-pro-preview") == "gemini-3.1-pro-preview",
@@ -31,8 +36,12 @@ struct GeminiModelCatalogTests {
             "Stored Gemini 2.5 Flash-Lite selections should migrate to Gemini 3.1 Flash-Lite Preview"
         )
         expect(
-            Config.migratedGeminiModelID("gemini-3-flash-preview") == "gemini-3-flash-preview",
+            Config.migratedGeminiModelID("gemini-3.5-flash") == "gemini-3.5-flash",
             "Current supported selections should remain unchanged"
+        )
+        expect(
+            Config.persistedGeminiModelMigration(from: "gemini-3-flash-preview") == "gemini-3.5-flash",
+            "Only the deprecated Gemini 3 Flash Preview setting should be rewritten in storage"
         )
         expect(
             Config.persistedGeminiModelMigration(from: "gemini-3-pro-preview") == "gemini-3.1-pro-preview",
@@ -43,12 +52,16 @@ struct GeminiModelCatalogTests {
             "Only the deprecated Gemini 2.5 Flash-Lite setting should be rewritten in storage"
         )
         expect(
-            Config.persistedGeminiModelMigration(from: "gemini-3-flash-preview") == nil,
+            Config.persistedGeminiModelMigration(from: "gemini-3.5-flash") == nil,
             "Supported Gemini selections should not be rewritten in storage"
         )
         expect(
             Config.persistedGeminiModelMigration(from: "gemini-custom-experimental") == nil,
             "Unknown custom Gemini selections should not be overwritten during migration"
+        )
+        expect(
+            Config.requestGeminiModelID(from: "gemini-3-flash-preview") == "gemini-3.5-flash",
+            "Deprecated Gemini 3 Flash Preview requests should be upgraded automatically"
         )
         expect(
             Config.requestGeminiModelID(from: "gemini-3-pro-preview") == "gemini-3.1-pro-preview",
@@ -59,7 +72,7 @@ struct GeminiModelCatalogTests {
             "Custom Gemini selections should still be used for requests"
         )
         expect(
-            Config.requestGeminiModelID(from: nil) == "gemini-3-flash-preview",
+            Config.requestGeminiModelID(from: nil) == "gemini-3.5-flash",
             "Missing Gemini selections should still use the default request model"
         )
 

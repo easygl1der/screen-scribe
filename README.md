@@ -53,11 +53,11 @@ ScreenScribe allows you to choose between the following Gemini models to optimiz
 
 | Model | Description |
 |-------|-------------|
-| **Gemini 3 Flash** | Best balance of speed, cost, and accuracy |
-| **Gemini 3 Pro** | Most capable model for complex content |
-| **Gemini 2.5 Flash-Lite** | Fastest and most cost-effective option |
+| **Gemini 3.5 Flash** | Best balance of speed, cost, and accuracy |
+| **Gemini 3.1 Pro** | Most capable model for complex content |
+| **Gemini 3.1 Flash-Lite** | Fastest and most cost-effective option |
 
-> Note: All models are available on the free tier that includes a generous [usage limit](https://ai.google.dev/gemini-api/docs/rate-limits) that should be more than sufficient for personal use.
+> Note: Availability and quotas can change; see Google's current [usage limits](https://ai.google.dev/gemini-api/docs/rate-limits) for details.
 
 ## Installation
 
