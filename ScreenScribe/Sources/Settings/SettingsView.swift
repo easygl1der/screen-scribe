@@ -90,7 +90,7 @@ struct SettingsView: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Image(systemName: ProviderCredentialStore.secret(for: provider.id) == nil ? "key.slash" : "key.fill")
+                        Image(systemName: settings.hasStoredCredential(for: provider.id) ? "key.fill" : "key.slash")
                             .foregroundStyle(provider.isEnabled ? .green : .secondary)
 
                         Button {

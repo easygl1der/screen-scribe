@@ -36,7 +36,7 @@ struct GeminiModel: Identifiable {
 
 /// Central configuration access point for the application
 enum Config {
-    static let defaultGeminiModelID = "gemini-3.5-flash"
+    static let defaultGeminiModelID = "gemini-3.1-flash-lite"
 
     /// The Gemini API key loaded from Keychain or Secrets.plist
     @MainActor
@@ -49,9 +49,8 @@ enum Config {
     
     /// Available Gemini models to choose from
     static let availableGeminiModels: [GeminiModel] = [
+        .init(id: "gemini-3.1-flash-lite", label: "Gemini 3.1 Flash-Lite", note: "Fastest"),
         .init(id: "gemini-3.5-flash", label: "Gemini 3.5 Flash", note: "Best balance"),
-        .init(id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", note: "Most capable"),
-        .init(id: "gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash-Lite", note: "Fastest"),
     ]
 
     static func migratedGeminiModelID(_ modelID: String) -> String {
@@ -59,9 +58,11 @@ enum Config {
         case "gemini-3-flash-preview":
             return "gemini-3.5-flash"
         case "gemini-3-pro-preview":
-            return "gemini-3.1-pro-preview"
+            return "gemini-3.5-flash"
         case "gemini-2.5-flash-lite":
-            return "gemini-3.1-flash-lite-preview"
+            return "gemini-3.1-flash-lite"
+        case "gemini-3.1-flash-lite-preview":
+            return "gemini-3.1-flash-lite"
         default:
             return modelID
         }
