@@ -84,13 +84,6 @@ struct SettingsView: View {
             Section("AI Providers") {
                 ForEach(settings.providers) { provider in
                     HStack {
-                        Button {
-                            editingProvider = provider
-                        } label: {
-                            Image(systemName: editingProvider?.id == provider.id ? "checkmark.circle.fill" : "circle")
-                        }
-                        .buttonStyle(.plain)
-
                         VStack(alignment: .leading) {
                             Text(provider.name)
                             Text("\(provider.kind.rawValue) · \(provider.model) · priority \(provider.priority)")
@@ -100,6 +93,11 @@ struct SettingsView: View {
                         Image(systemName: ProviderCredentialStore.secret(for: provider.id) == nil ? "key.slash" : "key.fill")
                             .foregroundStyle(provider.isEnabled ? .green : .secondary)
 
+                        Button {
+                            editingProvider = provider
+                            isCreatingProvider = true
+                        } label: { Image(systemName: "pencil") }
+                            .help("Edit provider")
                         Button { settings.moveProvider(id: provider.id, by: -1) } label: { Image(systemName: "arrow.up") }
                             .help("Increase priority")
                         Button { settings.moveProvider(id: provider.id, by: 1) } label: { Image(systemName: "arrow.down") }
@@ -113,9 +111,6 @@ struct SettingsView: View {
                 }
                 HStack {
                     Button("Add Provider") { isCreatingProvider = true }
-                    if let provider = editingProvider {
-                        Button("Edit \(provider.name)") { isCreatingProvider = true }
-                    }
                 }
                 Text("Provider tokens are stored in macOS Keychain and screenshots are never persisted by ScreenScribe.")
                     .font(.caption).foregroundStyle(.secondary)
