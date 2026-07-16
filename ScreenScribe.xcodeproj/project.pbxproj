@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B9583CA72DBD8C8300F43550 /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = B9583C9C2DBD8C8300F43550 /* Secrets.plist */; };
 		B9583CA82DBD8C8300F43550 /* Build.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = B9583C7B2DBD8C8300F43550 /* Build.xcconfig */; };
 		B9583CAC2DBD8C8300F43550 /* Screen Capture.aif in Resources */ = {isa = PBXBuildFile; fileRef = B9583C9B2DBD8C8300F43550 /* Screen Capture.aif */; };
 		B9583CAE2DBD8C8300F43550 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = B9583C9F2DBD8C8300F43550 /* LICENSE */; };
@@ -41,6 +40,11 @@
 		C1000003000000000000000A /* PromptEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000003000000000000000B /* PromptEditorView.swift */; };
 		C1000004000000000000000A /* PromptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000004000000000000000B /* PromptListView.swift */; };
 		C1000006000000000000000A /* ScreenCaptureBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000006000000000000000B /* ScreenCaptureBackend.swift */; };
+		D2000001000000000000000A /* AIExtractionRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000001000000000000000B /* AIExtractionRouting.swift */; };
+		D2000002000000000000000A /* OpenAICompatibleProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000002000000000000000B /* OpenAICompatibleProvider.swift */; };
+		D2000003000000000000000A /* GeminiProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000003000000000000B /* GeminiProvider.swift */; };
+		D2000004000000000000000A /* ProviderCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000004000000000000000B /* ProviderCredentialStore.swift */; };
+		D2000005000000000000000A /* AIProviderFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000005000000000000000B /* AIProviderFactory.swift */; };
 		F5B0C7647A784F30BB1B71D9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C128894D5D084D2FBAADA65C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -73,7 +77,6 @@
 		B9583C992DBD8C8300F43550 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B9583C9A2DBD8C8300F43550 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		B9583C9B2DBD8C8300F43550 /* Screen Capture.aif */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Screen Capture.aif"; sourceTree = "<group>"; };
-		B9583C9C2DBD8C8300F43550 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 		B9583C9E2DBD8C8300F43550 /* ScreenScribe.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ScreenScribe.xcodeproj; sourceTree = "<group>"; };
 		B9583C9F2DBD8C8300F43550 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		B9583CCA2DBD935300F43550 /* ScreenScribe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScreenScribe.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -83,6 +86,11 @@
 		C1000003000000000000000B /* PromptEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptEditorView.swift; sourceTree = "<group>"; };
 		C1000004000000000000000B /* PromptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptListView.swift; sourceTree = "<group>"; };
 		C1000006000000000000000B /* ScreenCaptureBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureBackend.swift; sourceTree = "<group>"; };
+		D2000001000000000000000B /* AIExtractionRouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIExtractionRouting.swift; sourceTree = "<group>"; };
+		D2000002000000000000000B /* OpenAICompatibleProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAICompatibleProvider.swift; sourceTree = "<group>"; };
+		D2000003000000000000000B /* GeminiProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiProvider.swift; sourceTree = "<group>"; };
+		D2000004000000000000000B /* ProviderCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderCredentialStore.swift; sourceTree = "<group>"; };
+		D2000005000000000000000B /* AIProviderFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProviderFactory.swift; sourceTree = "<group>"; };
 		C128894D5D084D2FBAADA65C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -134,6 +142,11 @@
 				B9F54FE82F10866C0070D1C2 /* ScreenCapturePermissionManager.swift */,
 				C1000006000000000000000B /* ScreenCaptureBackend.swift */,
 				C1000002000000000000000B /* PromptManager.swift */,
+				D2000001000000000000000B /* AIExtractionRouting.swift */,
+				D2000002000000000000000B /* OpenAICompatibleProvider.swift */,
+				D2000003000000000000000B /* GeminiProvider.swift */,
+				D2000004000000000000000B /* ProviderCredentialStore.swift */,
+				D2000005000000000000000B /* AIProviderFactory.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -177,7 +190,6 @@
 				B9583C992DBD8C8300F43550 /* Info.plist */,
 				B9583C9A2DBD8C8300F43550 /* main.swift */,
 				B9583C9B2DBD8C8300F43550 /* Screen Capture.aif */,
-				B9583C9C2DBD8C8300F43550 /* Secrets.plist */,
 			);
 			path = ScreenScribe;
 			sourceTree = "<group>";
@@ -262,7 +274,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F5B0C7647A784F30BB1B71D9 /* Assets.xcassets in Resources */,
-				B9583CA72DBD8C8300F43550 /* Secrets.plist in Resources */,
 				B9583CA82DBD8C8300F43550 /* Build.xcconfig in Resources */,
 				B9583CAC2DBD8C8300F43550 /* Screen Capture.aif in Resources */,
 				B9583CAE2DBD8C8300F43550 /* LICENSE in Resources */,
@@ -306,6 +317,11 @@
 				C1000003000000000000000A /* PromptEditorView.swift in Sources */,
 				C1000004000000000000000A /* PromptListView.swift in Sources */,
 				C1000006000000000000000A /* ScreenCaptureBackend.swift in Sources */,
+				D2000001000000000000000A /* AIExtractionRouting.swift in Sources */,
+				D2000002000000000000000A /* OpenAICompatibleProvider.swift in Sources */,
+				D2000003000000000000000A /* GeminiProvider.swift in Sources */,
+				D2000004000000000000000A /* ProviderCredentialStore.swift in Sources */,
+				D2000005000000000000000A /* AIProviderFactory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -76,72 +76,52 @@ struct ShortcutRecorderButton: View {
 
 struct SettingsView: View {
     @StateObject private var settings = SettingsManager.shared
-    @AppStorage("geminiAPIKey") private var apiKeyInput: String = ""
-    @State private var isValidAPIKey: Bool = false
-
-    private func validateAPIKey(_ key: String) -> Bool {
-        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.starts(with: "AIza") && trimmed.count == 39
-    }
+    @State private var editingProvider: AIProviderConfiguration?
+    @State private var isCreatingProvider = false
 
     var body: some View {
         Form {
-            Section {
-                VStack(alignment: .leading) {
-                    LabeledContent("Gemini API Key:") {
-                        HStack {
-                            SecureField("Enter your API key", text: $apiKeyInput)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 300)
-                                .onChange(of: apiKeyInput) { _, newValue in
-                                    let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                                    if newValue != trimmed {
-                                        apiKeyInput = trimmed
-                                    }
-                                    isValidAPIKey = validateAPIKey(trimmed)
-                                }
-                            if !apiKeyInput.isEmpty {
-                                if isValidAPIKey {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.green)
-                                } else {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(.red)
-                                }
-                            }
+            Section("AI Providers") {
+                ForEach(settings.providers) { provider in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(provider.name)
+                            Text("\(provider.kind.rawValue) · \(provider.model) · priority \(provider.priority)")
+                                .font(.caption).foregroundStyle(.secondary)
                         }
+                        Spacer()
+                        Image(systemName: ProviderCredentialStore.secret(for: provider.id) == nil ? "key.slash" : "key.fill")
+                            .foregroundStyle(provider.isEnabled ? .green : .secondary)
                     }
-
-                    if !apiKeyInput.isEmpty && !isValidAPIKey {
-                        Text("Invalid API key format. Key should start with 'AIza' followed by 35 characters.")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                    }
-
-                    Text("Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .tint(.blue)
                 }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    LabeledContent("Gemini Model:") {
-                        Picker("", selection: $settings.selectedModel) {
-                            ForEach(Config.availableGeminiModels) { model in
-                                Text(model.label).tag(model.id)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .frame(width: 330)
+                HStack {
+                    Button("Add Provider") { isCreatingProvider = true }
+                    if let provider = editingProvider {
+                        Button("Edit \(provider.name)") { isCreatingProvider = true }
                     }
-                    Text("Choose speed / cost trade-offs for AI extraction")
-                        .font(.caption).foregroundStyle(.secondary)
                 }
-            } header: {
-                Text("API Configuration")
-            } footer: {
-                Text("The API key is required for AI-powered extraction")
-                    .foregroundStyle(.secondary)
+                ForEach(settings.providers) { provider in
+                    HStack(spacing: 8) {
+                        Button { editingProvider = provider } label: { Image(systemName: editingProvider?.id == provider.id ? "checkmark.circle.fill" : "circle") }
+                            .buttonStyle(.plain)
+                        Spacer()
+                        Button { settings.moveProvider(id: provider.id, by: -1) } label: { Image(systemName: "arrow.up") }
+                        Button { settings.moveProvider(id: provider.id, by: 1) } label: { Image(systemName: "arrow.down") }
+                        Button(role: .destructive) { settings.deleteProvider(provider); if editingProvider?.id == provider.id { editingProvider = nil } } label: { Image(systemName: "trash") }
+                    }
+                }
+                Text("Provider tokens are stored in macOS Keychain and screenshots are never persisted by ScreenScribe.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Extraction Output") {
+                Picker("Mode", selection: $settings.extractionMode) {
+                    ForEach(ExtractionMode.allCases) { Text($0.rawValue.capitalized).tag($0) }
+                }
+                Picker("Math delimiters", selection: $settings.mathDelimiter) {
+                    ForEach(MathDelimiterStyle.allCases) { Text($0.rawValue).tag($0) }
+                }
+                Toggle("Preview before copying", isOn: $settings.showPreview)
             }
 
             Section {
@@ -185,9 +165,54 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 500, height: 700)
-        .onAppear {
-            isValidAPIKey = validateAPIKey(apiKeyInput)
+        .sheet(isPresented: $isCreatingProvider) {
+            ProviderEditorView(provider: editingProvider) { provider, token in
+                settings.saveProvider(provider, token: token)
+                editingProvider = provider
+            }
         }
+    }
+}
+
+private struct ProviderEditorView: View {
+    @Environment(\.dismiss) private var dismiss
+    let original: AIProviderConfiguration?
+    let onSave: (AIProviderConfiguration, String?) -> Void
+    @State private var name: String
+    @State private var kind: AIProviderKind
+    @State private var endpoint: String
+    @State private var model: String
+    @State private var priority: Int
+    @State private var enabled: Bool
+    @State private var token: String = ""
+
+    init(provider: AIProviderConfiguration?, onSave: @escaping (AIProviderConfiguration, String?) -> Void) {
+        original = provider; self.onSave = onSave
+        _name = State(initialValue: provider?.name ?? "")
+        _kind = State(initialValue: provider?.kind ?? .openAICompatible)
+        _endpoint = State(initialValue: provider?.endpoint.absoluteString ?? "https://")
+        _model = State(initialValue: provider?.model ?? "")
+        _priority = State(initialValue: provider?.priority ?? SettingsManager.shared.providers.count)
+        _enabled = State(initialValue: provider?.isEnabled ?? true)
+    }
+
+    var body: some View {
+        Form {
+            TextField("Name", text: $name)
+            Picker("Provider", selection: $kind) { ForEach(AIProviderKind.allCases) { Text($0.rawValue).tag($0) } }
+            TextField("Base URL", text: $endpoint)
+            TextField("Model", text: $model)
+            Stepper("Priority: \(priority)", value: $priority, in: 0...99)
+            Toggle("Enabled", isOn: $enabled)
+            SecureField("API token (leave blank to keep existing)", text: $token)
+            HStack { Spacer(); Button("Cancel") { dismiss() }; Button("Save") { save() }.disabled(name.isEmpty || model.isEmpty || URL(string: endpoint) == nil) }
+        }.padding().frame(width: 460)
+    }
+
+    private func save() {
+        guard let url = URL(string: endpoint) else { return }
+        let provider = AIProviderConfiguration(id: original?.id ?? UUID(), name: name, kind: kind, endpoint: url, model: model, priority: priority, isEnabled: enabled)
+        onSave(provider, token.isEmpty ? nil : token); dismiss()
     }
 }
 

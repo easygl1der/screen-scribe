@@ -130,7 +130,6 @@ final class App: NSObject, NSApplicationDelegate {
         return item
     }()
 
-    private let geminiService = GeminiService()
     private static let soundPath = "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/system/Screen Capture.aiff"
 
     private func rebuildMenu() {
@@ -515,8 +514,9 @@ final class App: NSObject, NSApplicationDelegate {
             return
         }
 
-        guard let apiKey = UserDefaults.standard.string(forKey: "geminiAPIKey"), !apiKey.isEmpty else {
-            NSAlert.showModalAlert(message: "Please set your Gemini API key in Settings")
+        let providers = AIProviderFactory.makeProviders(from: settingsManager.providers)
+        guard !providers.isEmpty else {
+            NSAlert.showModalAlert(message: "Add an enabled AI provider and API key in Settings")
             showSettings()
             return
         }
@@ -529,20 +529,22 @@ final class App: NSObject, NSApplicationDelegate {
             return
         }
 
-        let base64Image = imageData.base64EncodedString()
-
         isExtracting = true
 
         Task {
             defer { isExtracting = false }
 
             do {
-                let extractedContent = try await geminiService.extractContent(
-                    from: base64Image,
-                    apiKey: apiKey,
-                    promptContent: prompt.content
+                let contract = ExtractionOutputContract(
+                    mode: self.settingsManager.extractionMode,
+                    mathDelimiter: self.settingsManager.mathDelimiter
                 )
-                Logger.log(.info, "Raw content from API: \(extractedContent)")
+                let request = AIExtractionRequest(
+                    imageData: imageData,
+                    prompt: prompt.content + "\n\n" + contract.instructions,
+                    mode: self.settingsManager.extractionMode
+                )
+                let extractedContent = try await AIExtractionRouter(providers: providers).extract(request).text
 
                 let cleanedContent = cleanExtractedString(extractedContent)
                 let textToCopy: String
@@ -557,11 +559,7 @@ final class App: NSObject, NSApplicationDelegate {
                     textToCopy = cleanedContent
                 }
 
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(textToCopy, forType: .string)
-                Logger.log(.info, "Copied content to clipboard (format: \(prompt.copyFormat.rawValue))")
-                showSuccessFeedback()
-                historyManager.addEntry(textToCopy, promptId: prompt.id, promptName: prompt.name)
+                deliverAIResult(textToCopy, prompt: prompt)
             } catch let error as GeminiAPIError {
                 handleGeminiError(error)
             } catch {
@@ -574,6 +572,39 @@ final class App: NSObject, NSApplicationDelegate {
     private func cleanExtractedString(_ rawString: String) -> String {
         let cleaned = rawString.trimmingCharacters(in: .whitespacesAndNewlines)
         return cleaned
+    }
+
+    private func deliverAIResult(_ text: String, prompt: Prompt) {
+        guard settingsManager.showPreview else {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+            showSuccessFeedback()
+            historyManager.addEntry(text, promptId: prompt.id, promptName: prompt.name)
+            return
+        }
+
+        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 520, height: 260))
+        textView.string = text
+        textView.isRichText = false
+        textView.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
+        let scrollView = NSScrollView(frame: textView.frame)
+        scrollView.documentView = textView
+        scrollView.hasVerticalScroller = true
+
+        let alert = NSAlert()
+        alert.messageText = "Extraction Preview"
+        alert.informativeText = "Edit the result, then copy it to the clipboard."
+        alert.accessoryView = scrollView
+        alert.addButton(withTitle: "Copy")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        let editedText = textView.string
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(editedText, forType: .string)
+        showSuccessFeedback()
+        historyManager.addEntry(editedText, promptId: prompt.id, promptName: prompt.name)
     }
 
     func showSuccessFeedback() {

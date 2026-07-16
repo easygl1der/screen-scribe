@@ -16,7 +16,7 @@ run_swift_test() {
   shift
 
   echo "Running $binary_name"
-  swiftc "$@" -o "$tmpdir/$binary_name"
+  swiftc -parse-as-library "$@" -o "$tmpdir/$binary_name"
   "$tmpdir/$binary_name"
 }
 
@@ -26,6 +26,32 @@ run_swift_test \
   GeminiModelCatalogTests \
   Tests/GeminiModelCatalogTests.swift \
   ScreenScribe/Sources/Config.swift
+
+run_swift_test \
+  ExtractionRoutingTests \
+  Tests/ExtractionRoutingTests.swift \
+  ScreenScribe/Sources/Services/AIExtractionRouting.swift
+
+run_swift_test \
+  ProviderConfigurationTests \
+  Tests/ProviderConfigurationTests.swift \
+  ScreenScribe/Sources/Services/AIExtractionRouting.swift
+
+run_swift_test \
+  OutputContractTests \
+  Tests/OutputContractTests.swift \
+  ScreenScribe/Sources/Services/AIExtractionRouting.swift
+
+run_swift_test \
+  OpenAICompatibleProviderTests \
+  Tests/OpenAICompatibleProviderTests.swift \
+  ScreenScribe/Sources/Services/AIExtractionRouting.swift \
+  ScreenScribe/Sources/Services/OpenAICompatibleProvider.swift
+
+run_swift_test \
+  ProviderCredentialKeyTests \
+  Tests/ProviderCredentialKeyTests.swift \
+  ScreenScribe/Sources/Services/ProviderCredentialStore.swift
 
 run_swift_test \
   ScreenCaptureCLIArgumentsTests \
