@@ -38,5 +38,17 @@ struct OpenAICompatibleProviderTests {
         let choices = [["message": ["content": "x^2"]]]
         let response = try JSONSerialization.data(withJSONObject: ["choices": choices])
         expect(OpenAICompatibleProvider.parseResponse(response) == "x^2", "provider should parse chat completions content")
+
+        let completeEndpoint = URL(string: "https://vision.example.com/v1/chat/completions")!
+        expect(
+            OpenAICompatibleProvider.chatCompletionsURL(from: completeEndpoint) == completeEndpoint,
+            "provider should not duplicate an explicit chat completions path"
+        )
+
+        let quotaBody = Data("{\"code\":\"AllocationQuota.FreeTierOnly\"}".utf8)
+        expect(
+            OpenAICompatibleProvider.error(for: 403, responseData: quotaBody) == .quotaExceeded,
+            "DashScope free-tier exhaustion should allow provider fallback"
+        )
     }
 }

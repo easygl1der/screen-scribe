@@ -84,6 +84,13 @@ struct SettingsView: View {
             Section("AI Providers") {
                 ForEach(settings.providers) { provider in
                     HStack {
+                        Button {
+                            editingProvider = provider
+                        } label: {
+                            Image(systemName: editingProvider?.id == provider.id ? "checkmark.circle.fill" : "circle")
+                        }
+                        .buttonStyle(.plain)
+
                         VStack(alignment: .leading) {
                             Text(provider.name)
                             Text("\(provider.kind.rawValue) · \(provider.model) · priority \(provider.priority)")
@@ -92,22 +99,22 @@ struct SettingsView: View {
                         Spacer()
                         Image(systemName: ProviderCredentialStore.secret(for: provider.id) == nil ? "key.slash" : "key.fill")
                             .foregroundStyle(provider.isEnabled ? .green : .secondary)
+
+                        Button { settings.moveProvider(id: provider.id, by: -1) } label: { Image(systemName: "arrow.up") }
+                            .help("Increase priority")
+                        Button { settings.moveProvider(id: provider.id, by: 1) } label: { Image(systemName: "arrow.down") }
+                            .help("Decrease priority")
+                        Button(role: .destructive) {
+                            settings.deleteProvider(provider)
+                            if editingProvider?.id == provider.id { editingProvider = nil }
+                        } label: { Image(systemName: "trash") }
+                            .help("Delete provider")
                     }
                 }
                 HStack {
                     Button("Add Provider") { isCreatingProvider = true }
                     if let provider = editingProvider {
                         Button("Edit \(provider.name)") { isCreatingProvider = true }
-                    }
-                }
-                ForEach(settings.providers) { provider in
-                    HStack(spacing: 8) {
-                        Button { editingProvider = provider } label: { Image(systemName: editingProvider?.id == provider.id ? "checkmark.circle.fill" : "circle") }
-                            .buttonStyle(.plain)
-                        Spacer()
-                        Button { settings.moveProvider(id: provider.id, by: -1) } label: { Image(systemName: "arrow.up") }
-                        Button { settings.moveProvider(id: provider.id, by: 1) } label: { Image(systemName: "arrow.down") }
-                        Button(role: .destructive) { settings.deleteProvider(provider); if editingProvider?.id == provider.id { editingProvider = nil } } label: { Image(systemName: "trash") }
                     }
                 }
                 Text("Provider tokens are stored in macOS Keychain and screenshots are never persisted by ScreenScribe.")
@@ -186,6 +193,8 @@ private struct ProviderEditorView: View {
     @State private var enabled: Bool
     @State private var token: String = ""
 
+    private let qwenOCREndpoint = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
     init(provider: AIProviderConfiguration?, onSave: @escaping (AIProviderConfiguration, String?) -> Void) {
         original = provider; self.onSave = onSave
         _name = State(initialValue: provider?.name ?? "")
@@ -202,17 +211,38 @@ private struct ProviderEditorView: View {
             Picker("Provider", selection: $kind) { ForEach(AIProviderKind.allCases) { Text($0.rawValue).tag($0) } }
             TextField("Base URL", text: $endpoint)
             TextField("Model", text: $model)
+            if kind == .openAICompatible {
+                Button("Use Qwen OCR defaults") {
+                    name = "Qwen OCR"
+                    endpoint = qwenOCREndpoint
+                    model = "qwen3.5-ocr"
+                }
+                Text("For a regional DashScope workspace, replace the base URL with its OpenAI-compatible endpoint. Do not paste the /chat/completions suffix twice.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Stepper("Priority: \(priority)", value: $priority, in: 0...99)
             Toggle("Enabled", isOn: $enabled)
             SecureField("API token (leave blank to keep existing)", text: $token)
-            HStack { Spacer(); Button("Cancel") { dismiss() }; Button("Save") { save() }.disabled(name.isEmpty || model.isEmpty || URL(string: endpoint) == nil) }
+            HStack { Spacer(); Button("Cancel") { dismiss() }; Button("Save") { save() }.disabled(name.isEmpty || model.isEmpty || validatedEndpoint == nil) }
         }.padding().frame(width: 460)
     }
 
     private func save() {
-        guard let url = URL(string: endpoint) else { return }
+        guard let url = validatedEndpoint else { return }
         let provider = AIProviderConfiguration(id: original?.id ?? UUID(), name: name, kind: kind, endpoint: url, model: model, priority: priority, isEnabled: enabled)
         onSave(provider, token.isEmpty ? nil : token); dismiss()
+    }
+
+    private var validatedEndpoint: URL? {
+        guard let url = URL(string: endpoint),
+              let scheme = url.scheme?.lowercased(),
+              ["https", "http"].contains(scheme),
+              url.host != nil
+        else {
+            return nil
+        }
+        return url
     }
 }
 

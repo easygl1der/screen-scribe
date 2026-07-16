@@ -25,7 +25,7 @@ struct OpenAICompatibleProvider: AIExtractionProvider {
             throw AIExtractionError.invalidResponse
         }
         guard (200..<300).contains(httpResponse.statusCode) else {
-            throw error(for: httpResponse.statusCode)
+            throw Self.error(for: httpResponse.statusCode, responseData: data)
         }
 
         guard let text = Self.parseResponse(data) else {
@@ -56,7 +56,7 @@ struct OpenAICompatibleProvider: AIExtractionProvider {
             ]]
         ]
 
-        var request = URLRequest(url: configuration.endpoint.appendingPathComponent("chat/completions"))
+        var request = URLRequest(url: chatCompletionsURL(from: configuration.endpoint))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -75,7 +75,24 @@ struct OpenAICompatibleProvider: AIExtractionProvider {
         return content.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func error(for statusCode: Int) -> AIExtractionError {
+    static func chatCompletionsURL(from endpoint: URL) -> URL {
+        let normalizedPath = endpoint.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard normalizedPath.hasSuffix("chat/completions") else {
+            return endpoint.appendingPathComponent("chat/completions")
+        }
+        return endpoint
+    }
+
+    static func error(for statusCode: Int, responseData: Data) -> AIExtractionError {
+        let responseText = String(data: responseData, encoding: .utf8)?.lowercased() ?? ""
+
+        // DashScope returns 403 for an exhausted free-tier allocation. Treat it as
+        // a quota condition so the router can continue with the next provider.
+        if statusCode == 403,
+           responseText.contains("allocationquota") || responseText.contains("quota") {
+            return .quotaExceeded
+        }
+
         switch statusCode {
         case 401, 403:
             return .authenticationFailed

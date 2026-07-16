@@ -58,6 +58,7 @@ final class App: NSObject, NSApplicationDelegate {
 
     private var isExtracting = false
     private var isRequestingPermission = false
+    private var hasPresentedPermissionGuidanceThisLaunch = false
     private var isFullySetup = false
     private var isShortcutMonitoringSetup = false
     private var originalStatusImage: NSImage?
@@ -324,6 +325,7 @@ final class App: NSObject, NSApplicationDelegate {
 
     /// Called when permission is granted (either immediately or after polling)
     private func onPermissionGranted() {
+        hasPresentedPermissionGuidanceThisLaunch = false
         applyCaptureMenuState(permissionGranted: true)
         // Setup full functionality if not already done
         setupFullFunctionality()
@@ -423,6 +425,15 @@ final class App: NSObject, NSApplicationDelegate {
                 Logger.log(.info, "Permission request already in progress; ignoring duplicate capture request")
                 return
             }
+
+            // Screen Recording is controlled by TCC. Once macOS has rejected a
+            // request in this launch, do not re-open the same system prompt for
+            // every menu item or keyboard shortcut.
+            guard !hasPresentedPermissionGuidanceThisLaunch else {
+                Logger.log(.info, "Screen recording remains unavailable; suppressing duplicate permission guidance")
+                return
+            }
+            hasPresentedPermissionGuidanceThisLaunch = true
 
             guard showPermissionRequiredAlert() else {
                 return
