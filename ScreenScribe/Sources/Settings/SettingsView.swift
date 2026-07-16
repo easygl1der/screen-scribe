@@ -223,7 +223,16 @@ private struct ProviderEditorView: View {
             }
             Stepper("Priority: \(priority)", value: $priority, in: 0...99)
             Toggle("Enabled", isOn: $enabled)
-            SecureField("API token (leave blank to keep existing)", text: $token)
+            LabeledContent("API token") {
+                VStack(alignment: .leading, spacing: 4) {
+                    SecureField("", text: $token)
+                    if original != nil {
+                        Text("Leave blank to keep the stored token.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
             HStack { Spacer(); Button("Cancel") { dismiss() }; Button("Save") { save() }.disabled(name.isEmpty || model.isEmpty || validatedEndpoint == nil) }
         }.padding().frame(width: 460)
     }
