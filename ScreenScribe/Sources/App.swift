@@ -548,7 +548,9 @@ final class App: NSObject, NSApplicationDelegate {
             do {
                 let contract = ExtractionOutputContract(
                     mode: self.settingsManager.extractionMode,
-                    mathDelimiter: self.settingsManager.mathDelimiter
+                    mathDelimiter: self.settingsManager.mathDelimiter,
+                    outputLanguage: self.settingsManager.outputLanguage,
+                    customOutputLanguage: self.settingsManager.customOutputLanguage
                 )
                 let request = AIExtractionRequest(
                     imageData: imageData,

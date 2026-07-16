@@ -128,6 +128,14 @@ struct SettingsView: View {
                 Picker("Math delimiters", selection: $settings.mathDelimiter) {
                     ForEach(MathDelimiterStyle.allCases) { Text($0.rawValue).tag($0) }
                 }
+                Picker("Output language", selection: $settings.outputLanguage) {
+                    ForEach(OutputLanguage.allCases) { language in
+                        Text(language.label).tag(language)
+                    }
+                }
+                if settings.outputLanguage == .custom {
+                    TextField("Target language", text: $settings.customOutputLanguage)
+                }
                 Toggle("Preview before copying", isOn: $settings.showPreview)
             }
 
@@ -193,7 +201,7 @@ private struct ProviderEditorView: View {
     @State private var enabled: Bool
     @State private var token: String = ""
 
-    private let qwenOCREndpoint = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    private let dashScopeEndpoint = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
     init(provider: AIProviderConfiguration?, onSave: @escaping (AIProviderConfiguration, String?) -> Void) {
         original = provider; self.onSave = onSave
@@ -212,9 +220,19 @@ private struct ProviderEditorView: View {
             TextField("Base URL", text: $endpoint)
             TextField("Model", text: $model)
             if kind == .openAICompatible {
+                Button("Use Qwen 3.6 Flash defaults") {
+                    name = "Qwen 3.6 Flash"
+                    endpoint = dashScopeEndpoint
+                    model = "qwen3.6-flash"
+                }
+                Button("Use Qwen 3.7 Max defaults") {
+                    name = "Qwen 3.7 Max"
+                    endpoint = dashScopeEndpoint
+                    model = "qwen3.7-max"
+                }
                 Button("Use Qwen OCR defaults") {
                     name = "Qwen OCR"
-                    endpoint = qwenOCREndpoint
+                    endpoint = dashScopeEndpoint
                     model = "qwen3.5-ocr"
                 }
                 Text("For a regional DashScope workspace, replace the base URL with its OpenAI-compatible endpoint. Do not paste the /chat/completions suffix twice.")

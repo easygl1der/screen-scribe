@@ -22,15 +22,37 @@ enum MathDelimiterStyle: String, Codable, CaseIterable, Identifiable, Sendable {
     var id: String { rawValue }
 }
 
+enum OutputLanguage: String, Codable, CaseIterable, Identifiable, Sendable {
+    case original
+    case english
+    case simplifiedChinese
+    case traditionalChinese
+    case custom
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .original: return "Original"
+        case .english: return "English"
+        case .simplifiedChinese: return "Simplified Chinese"
+        case .traditionalChinese: return "Traditional Chinese"
+        case .custom: return "Custom"
+        }
+    }
+}
+
 struct ExtractionOutputContract: Codable, Equatable, Sendable {
     var mode: ExtractionMode
     var mathDelimiter: MathDelimiterStyle
+    var outputLanguage: OutputLanguage = .original
+    var customOutputLanguage: String = ""
 
     var instructions: String {
         let modeInstruction: String
         switch mode {
         case .automatic:
-            modeInstruction = "Choose the most appropriate output format for the captured content: LaTeX for mathematics, Markdown for prose and tables, and fenced Markdown code blocks for source code."
+            modeInstruction = "First identify the captured content, then choose its output format: LaTeX for mathematics, Markdown for prose and tables, fenced Markdown code blocks for source code, and a concise Markdown description for diagrams or figures. These output instructions take precedence over any conflicting format instruction in the selected prompt."
         case .latex:
             modeInstruction = "Convert mathematical notation into syntactically correct LaTeX and preserve non-mathematical text."
         case .markdown:
@@ -46,8 +68,33 @@ struct ExtractionOutputContract: Codable, Equatable, Sendable {
         return [
             modeInstruction,
             mathDelimiterInstruction,
+            languageInstruction,
             "Output only the extracted content. Do not add explanations, labels, or Markdown fences around the entire response."
         ].joined(separator: "\n\n")
+    }
+
+    private var languageInstruction: String {
+        let target: String
+        switch outputLanguage {
+        case .original:
+            return "Preserve the source language. Do not translate the extracted content."
+        case .english:
+            target = "English"
+        case .simplifiedChinese:
+            target = "Simplified Chinese"
+        case .traditionalChinese:
+            target = "Traditional Chinese"
+        case .custom:
+            let trimmedLanguage = customOutputLanguage.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmedLanguage.isEmpty
+                ? "Preserve the source language. Do not translate the extracted content."
+                : translationInstruction(target: trimmedLanguage)
+        }
+        return translationInstruction(target: target)
+    }
+
+    private func translationInstruction(target: String) -> String {
+        "Translate all natural-language prose, headings, captions, and table cell text into \(target). Preserve source code, URLs, identifiers, file paths, mathematical symbols, and LaTeX commands exactly."
     }
 
     private var mathDelimiterInstruction: String {

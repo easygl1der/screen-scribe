@@ -40,6 +40,8 @@ final class SettingsManager: ObservableObject {
     }
     @Published var extractionMode: ExtractionMode { didSet { UserDefaults.standard.set(extractionMode.rawValue, forKey: "extractionMode") } }
     @Published var mathDelimiter: MathDelimiterStyle { didSet { UserDefaults.standard.set(mathDelimiter.rawValue, forKey: "mathDelimiter") } }
+    @Published var outputLanguage: OutputLanguage { didSet { UserDefaults.standard.set(outputLanguage.rawValue, forKey: "outputLanguage") } }
+    @Published var customOutputLanguage: String { didSet { UserDefaults.standard.set(customOutputLanguage, forKey: "customOutputLanguage") } }
     @Published var showPreview: Bool { didSet { UserDefaults.standard.set(showPreview, forKey: "showPreview") } }
 
     func saveProvider(_ provider: AIProviderConfiguration, token: String?) {
@@ -70,6 +72,8 @@ final class SettingsManager: ObservableObject {
         providers = UserDefaults.standard.codable(forKey: "aiProviders") ?? []
         extractionMode = ExtractionMode(rawValue: UserDefaults.standard.string(forKey: "extractionMode") ?? "") ?? .automatic
         mathDelimiter = MathDelimiterStyle(rawValue: UserDefaults.standard.string(forKey: "mathDelimiter") ?? "") ?? .automatic
+        outputLanguage = OutputLanguage(rawValue: UserDefaults.standard.string(forKey: "outputLanguage") ?? "") ?? .original
+        customOutputLanguage = UserDefaults.standard.string(forKey: "customOutputLanguage") ?? ""
         showPreview = UserDefaults.standard.bool(forKey: "showPreview")
         textShortcut = UserDefaults.standard.codable(forKey: "textShortcut")
 
@@ -90,20 +94,20 @@ final class SettingsManager: ObservableObject {
         }
 
         if providers.isEmpty {
-            let legacyID = UUID(uuidString: "00000000-0000-0000-0000-000000000010")!
-            providers = [AIProviderConfiguration(
-                id: legacyID,
-                name: "Gemini",
-                kind: .gemini,
-                endpoint: URL(string: "https://generativelanguage.googleapis.com/v1beta")!,
-                model: selectedModel,
-                priority: 0,
-                isEnabled: true
-            )]
+            let legacyID = Self.geminiProviderID
+            providers = [
+                Self.defaultQwenProvider(),
+                Self.defaultGeminiProvider(model: selectedModel, priority: 1)
+            ]
             if let oldKey = UserDefaults.standard.string(forKey: "geminiAPIKey"), !oldKey.isEmpty {
                 _ = ProviderCredentialStore.save(oldKey, for: legacyID)
                 UserDefaults.standard.removeObject(forKey: "geminiAPIKey")
             }
+        } else if providers.count == 1,
+                  providers[0].id == Self.geminiProviderID,
+                  providers[0].kind == .gemini {
+            providers[0].priority = 1
+            providers.insert(Self.defaultQwenProvider(), at: 0)
         }
 
         if textShortcut == nil {
@@ -122,5 +126,32 @@ final class SettingsManager: ObservableObject {
 
         ShortcutMonitor.shared.setShortcut(textShortcut, for: .visionOCR)
         ShortcutMonitor.shared.setShortcut(defaultPromptShortcut, for: .defaultPrompt)
+    }
+
+    private static let geminiProviderID = UUID(uuidString: "00000000-0000-0000-0000-000000000010")!
+    private static let qwenProviderID = UUID(uuidString: "00000000-0000-0000-0000-000000000011")!
+
+    private static func defaultQwenProvider() -> AIProviderConfiguration {
+        AIProviderConfiguration(
+            id: qwenProviderID,
+            name: "Qwen 3.6 Flash",
+            kind: .openAICompatible,
+            endpoint: URL(string: "https://dashscope.aliyuncs.com/compatible-mode/v1")!,
+            model: "qwen3.6-flash",
+            priority: 0,
+            isEnabled: true
+        )
+    }
+
+    private static func defaultGeminiProvider(model: String, priority: Int) -> AIProviderConfiguration {
+        AIProviderConfiguration(
+            id: geminiProviderID,
+            name: "Gemini",
+            kind: .gemini,
+            endpoint: URL(string: "https://generativelanguage.googleapis.com/v1beta")!,
+            model: model,
+            priority: priority,
+            isEnabled: true
+        )
     }
 }
