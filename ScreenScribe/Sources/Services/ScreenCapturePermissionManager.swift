@@ -115,29 +115,10 @@ final class ScreenCapturePermissionManager: ObservableObject {
             return
         }
 
-        // Check if user previously had permission verified successfully
-        let hadPermissionBefore = defaults.bool(forKey: verifiedPermissionKey)
-
-        // ScreenCaptureKit can fail transiently at startup, especially on modern macOS.
-        // Use slightly stronger retry settings when user had permission before.
-        let maxAttempts = hadPermissionBefore ? 8 : 5
-        let baseDelay = hadPermissionBefore ? 1.5 : 1.0
-        let verificationResult = await verifyPermissionViaScreenCaptureKit(maxAttempts: maxAttempts, delaySeconds: baseDelay)
-
-        if verificationResult == .granted {
-            return
-        }
-
-        if CGPreflightScreenCaptureAccess() {
-            markPermissionGranted(source: "CGPreflightScreenCaptureAccess")
-            return
-        }
-
-        if verificationResult == .denied {
-            defaults.set(false, forKey: verifiedPermissionKey)
-        }
-
-        Logger.log(.info, "Permission not currently verified. Polling silently for external changes.")
+        // Do not call ScreenCaptureKit from a background monitor. On recent
+        // macOS releases it can produce the system recording dialog even
+        // though this code path is intended to be non-interactive.
+        Logger.log(.info, "Permission not currently verified. Polling with the non-interactive preflight API only.")
         startPolling()
     }
 
@@ -256,18 +237,8 @@ final class ScreenCapturePermissionManager: ObservableObject {
             return
         }
 
-        // Fallback: check via ScreenCaptureKit with a couple of attempts
-        // On macOS Sequoia/Tahoe, permission detection can be flaky even during polling
-        let result = await verifyPermissionViaScreenCaptureKit(maxAttempts: 2, delaySeconds: 0.5)
-        switch result {
-        case .granted:
-            Logger.log(.info, "Screen capture permission granted (via ScreenCaptureKit polling)")
-        case .denied:
-            defaults.set(false, forKey: verifiedPermissionKey)
-            hasPermission = false
-        case .transientError:
-            break
-        }
+        // The interactive ScreenCaptureKit verification deliberately does not
+        // run here. It belongs solely to an explicit capture request.
     }
 
     /// Open System Settings to the Screen Recording pane
