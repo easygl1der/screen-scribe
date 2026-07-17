@@ -34,16 +34,16 @@ struct ScreenCaptureStrategyTests {
             ScreenCaptureService.activeBackend(
                 for: OperatingSystemVersion(majorVersion: 15, minorVersion: 2, patchVersion: 0)
             ),
-            .legacyScreencaptureCLI,
-            "macOS 15.2 should keep using Apple's interactive screencapture backend"
+            .nativeRegionSelection,
+            "macOS 15.2 should use ScreenCaptureKit region capture"
         )
 
         expectEqual(
             ScreenCaptureService.activeBackend(
                 for: OperatingSystemVersion(majorVersion: 26, minorVersion: 2, patchVersion: 0)
             ),
-            .legacyScreencaptureCLI,
-            "Modern macOS releases should keep using Apple's interactive screencapture backend"
+            .nativeRegionSelection,
+            "Modern macOS releases should use ScreenCaptureKit region capture"
         )
 
         print("ScreenCaptureStrategyTests passed")

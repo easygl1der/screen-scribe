@@ -23,7 +23,7 @@ enum AIProviderFactory {
             guard let secret = secretForProvider(configuration.id) else { return nil }
             switch configuration.kind {
             case .gemini:
-                return LegacyGeminiProvider(id: configuration.id, apiKey: secret)
+                return GeminiProvider(configuration: configuration, apiKey: secret)
             case .openAICompatible:
                 return OpenAICompatibleProvider(configuration: configuration, apiKey: secret)
             }
@@ -45,7 +45,7 @@ private struct KeychainBackedProvider: AIExtractionProvider {
 
         switch configuration.kind {
         case .gemini:
-            return try await LegacyGeminiProvider(id: configuration.id, apiKey: secret).extract(request)
+            return try await GeminiProvider(configuration: configuration, apiKey: secret).extract(request)
         case .openAICompatible:
             return try await OpenAICompatibleProvider(configuration: configuration, apiKey: secret).extract(request)
         }
@@ -65,24 +65,5 @@ private struct KeychainBackedProvider: AIExtractionProvider {
             )
         }
         return nil
-    }
-}
-
-private struct LegacyGeminiProvider: AIExtractionProvider {
-    let id: UUID
-    let apiKey: String
-
-    func extract(_ request: AIExtractionRequest) async throws -> AIExtractionResult {
-        let service = await MainActor.run { GeminiService() }
-        do {
-            let text = try await service.extractContent(
-                from: request.imageData.base64EncodedString(),
-                apiKey: apiKey,
-                promptContent: request.prompt
-            )
-            return AIExtractionResult(text: text, providerID: id)
-        } catch {
-            throw AIExtractionError.requestFailed(error.localizedDescription)
-        }
     }
 }

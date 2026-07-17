@@ -25,7 +25,13 @@ struct ScreenCaptureStrategy {
     static func preferred(
         for version: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
     ) -> ScreenCaptureBackend {
-        _ = version
+        // ScreenCaptureKit captures under ScreenScribe's own TCC identity. On
+        // modern macOS this avoids delegating permission-sensitive capture to
+        // the external `screencapture` command-line tool.
+        if version.majorVersion > 15 ||
+            (version.majorVersion == 15 && version.minorVersion >= 2) {
+            return .nativeRegionSelection
+        }
         return .legacyScreencaptureCLI
     }
 }
