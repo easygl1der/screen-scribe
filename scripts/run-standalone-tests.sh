@@ -33,6 +33,12 @@ run_swift_test \
   ScreenScribe/Sources/Services/AIExtractionRouting.swift
 
 run_swift_test \
+  GeminiProviderAdapterTests \
+  Tests/GeminiProviderAdapterTests.swift \
+  ScreenScribe/Sources/Services/AIExtractionRouting.swift \
+  ScreenScribe/Sources/Services/GeminiProvider.swift
+
+run_swift_test \
   ProviderConfigurationTests \
   Tests/ProviderConfigurationTests.swift \
   ScreenScribe/Sources/Services/AIExtractionRouting.swift

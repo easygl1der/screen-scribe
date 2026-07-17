@@ -40,5 +40,23 @@ struct ExtractionRoutingTests {
         let result = try! await router.extract(request)
         expect(result.text == "x^2", "router should return the fallback provider result")
         expect(result.providerID == fallbackID, "router should fail over after a rate-limit error")
+
+        let locationRestrictedRouter = AIExtractionRouter(
+            providers: [
+                StubProvider(
+                    id: primaryID,
+                    result: .failure(.providerUnavailable("User location is not supported for the API use."))
+                ),
+                StubProvider(
+                    id: fallbackID,
+                    result: .success(AIExtractionResult(text: "fallback", providerID: fallbackID))
+                )
+            ]
+        )
+        let locationFallback = try! await locationRestrictedRouter.extract(request)
+        expect(
+            locationFallback.providerID == fallbackID,
+            "router should fail over when a provider is unavailable in the current region"
+        )
     }
 }

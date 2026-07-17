@@ -24,7 +24,7 @@ struct GeminiProvider: AIExtractionProvider {
             throw AIExtractionError.invalidResponse
         }
         guard (200..<300).contains(httpResponse.statusCode) else {
-            throw error(for: httpResponse.statusCode)
+            throw Self.error(for: httpResponse.statusCode, responseData: data)
         }
         guard let text = Self.parseResponse(data) else {
             throw AIExtractionError.invalidResponse
@@ -65,13 +65,31 @@ struct GeminiProvider: AIExtractionProvider {
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func error(for statusCode: Int) -> AIExtractionError {
+    static func error(for statusCode: Int, responseData: Data) -> AIExtractionError {
+        let message = responseErrorMessage(from: responseData)
+        if statusCode == 400,
+           message.localizedCaseInsensitiveContains("location is not supported") {
+            return .providerUnavailable(message)
+        }
+
         switch statusCode {
         case 401, 403: return .authenticationFailed
         case 402: return .quotaExceeded
         case 429: return .rateLimited
         case 500...599: return .serviceUnavailable
-        default: return .requestFailed("HTTP \(statusCode)")
+        default:
+            let detail = message.isEmpty ? "HTTP \(statusCode)" : "HTTP \(statusCode): \(message)"
+            return .requestFailed(detail)
         }
+    }
+
+    private static func responseErrorMessage(from data: Data) -> String {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let error = json["error"] as? [String: Any],
+              let message = error["message"] as? String
+        else {
+            return ""
+        }
+        return message
     }
 }

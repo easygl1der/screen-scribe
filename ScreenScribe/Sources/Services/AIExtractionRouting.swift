@@ -154,10 +154,11 @@ struct AIExtractionResult: Sendable, Equatable {
     let providerID: UUID
 }
 
-enum AIExtractionError: Error, Equatable, Sendable {
+enum AIExtractionError: Error, Equatable, Sendable, LocalizedError {
     case rateLimited
     case quotaExceeded
     case serviceUnavailable
+    case providerUnavailable(String)
     case networkUnavailable
     case authenticationFailed
     case invalidResponse
@@ -165,10 +166,31 @@ enum AIExtractionError: Error, Equatable, Sendable {
 
     var isFallbackEligible: Bool {
         switch self {
-        case .rateLimited, .quotaExceeded, .serviceUnavailable, .networkUnavailable:
+        case .rateLimited, .quotaExceeded, .serviceUnavailable, .providerUnavailable, .networkUnavailable:
             return true
         case .authenticationFailed, .invalidResponse, .requestFailed:
             return false
+        }
+    }
+
+    var errorDescription: String? {
+        switch self {
+        case .rateLimited:
+            return "The provider rate limit was reached."
+        case .quotaExceeded:
+            return "The provider quota was exhausted."
+        case .serviceUnavailable:
+            return "The provider service is temporarily unavailable."
+        case .providerUnavailable(let message):
+            return "The provider is unavailable: \(message)"
+        case .networkUnavailable:
+            return "The network is unavailable."
+        case .authenticationFailed:
+            return "The API token is missing or invalid."
+        case .invalidResponse:
+            return "The provider returned an invalid response."
+        case .requestFailed(let message):
+            return "The provider request failed: \(message)"
         }
     }
 }

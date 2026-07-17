@@ -23,5 +23,21 @@ struct GeminiProviderAdapterTests {
             withJSONObject: ["candidates": [["content": ["parts": [["text": "x"]]]]]]
         )
         expect(GeminiProvider.parseResponse(response) == "x", "Gemini provider should parse generated text")
+
+        let unsupportedLocationResponse = try JSONSerialization.data(
+            withJSONObject: ["error": ["message": "User location is not supported for the API use."]]
+        )
+        let unsupportedLocationError = GeminiProvider.error(
+            for: 400,
+            responseData: unsupportedLocationResponse
+        )
+        expect(
+            unsupportedLocationError == .providerUnavailable("User location is not supported for the API use."),
+            "Gemini location restrictions should allow routing to the next provider"
+        )
+        expect(
+            unsupportedLocationError.localizedDescription.contains("User location is not supported"),
+            "provider errors should preserve a useful explanation"
+        )
     }
 }
